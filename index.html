@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disk Scanner - 大文件扫描器</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0d1117;
+  color: #c9d1d9;
+  min-height: 100vh;
+}
+.container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+h1 { font-size: 28px; margin-bottom: 8px; color: #f0f6fc; }
+.sub { color: #8b949e; margin-bottom: 32px; font-size: 14px; }
+
+.drop-zone {
+  border: 2px dashed #30363d;
+  border-radius: 12px;
+  padding: 60px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  background: #161b22;
+}
+.drop-zone:hover, .drop-zone.active { border-color: #58a6ff; background: #1a2332; }
+.drop-zone .icon { font-size: 48px; margin-bottom: 16px; }
+.drop-zone .title { font-size: 18px; color: #f0f6fc; margin-bottom: 8px; }
+.drop-zone .hint { font-size: 13px; color: #8b949e; }
+
+.stats { display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap; }
+.stat-card {
+  flex: 1; min-width: 140px;
+  background: #161b22; border: 1px solid #30363d;
+  border-radius: 8px; padding: 16px;
+}
+.stat-card .label { font-size: 12px; color: #8b949e; margin-bottom: 4px; }
+.stat-card .value { font-size: 24px; font-weight: 600; color: #f0f6fc; }
+.stat-card .unit { font-size: 14px; color: #8b949e; }
+
+.bar-wrapper { margin-bottom: 2px; }
+.bar-row {
+  display: flex; align-items: center; gap: 12px; padding: 8px 12px;
+  border-radius: 6px; cursor: pointer; transition: background .15s;
+}
+.bar-row:hover { background: #1c2129; }
+.bar-name {
+  flex: 1; min-width: 0; font-size: 13px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bar-track { flex: 2; height: 20px; background: #21262d; border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+.bar-size { font-size: 12px; color: #8b949e; min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.section-title { font-size: 16px; color: #f0f6fc; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #21262d; }
+
+.loading { text-align: center; padding: 40px; color: #8b949e; }
+.spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin .6s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty { text-align: center; padding: 40px; color: #484f58; font-size: 14px; }
+a { color: #58a6ff; text-decoration: none; }
+a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Disk Scanner</h1>
+  <p class="sub">扫描任意文件夹，找出谁在吃你的硬盘空间</p>
+
+  <div class="drop-zone" id="dropZone">
+    <div class="icon">📁</div>
+    <div class="title">点击选择文件夹，或拖拽到此处</div>
+    <div class="hint">不会上传任何文件，全部在本地浏览器内完成</div>
+  </div>
+  <input type="file" id="dirInput" webkitdirectory multiple style="display:none">
+
+  <div id="stats" class="stats" style="display:none"></div>
+  <div id="results"></div>
+  <div class="empty" id="footer" style="margin-top:48px">
+    开源 & 免费 · <a href="https://github.com" target="_blank">GitHub</a>
+  </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const dirInput = document.getElementById('dirInput');
+const statsDiv = document.getElementById('stats');
+const resultsDiv = document.getElementById('results');
+const COLORS = ['#58a6ff','#3fb950','#d29922','#f78166','#a371f7','#8b949e','#79c0ff','#56d364'];
+
+dropZone.addEventListener('click', () => dirInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('active'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('active');
+  const items = e.dataTransfer.items;
+  if (items && items[0] && items[0].webkitGetAsEntry) {
+    scanEntry(items[0].webkitGetAsEntry());
+  }
+});
+dirInput.addEventListener('change', () => {
+  if (dirInput.files.length) scanFiles(dirInput.files);
+});
+
+function formatSize(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function scanEntry(entry) {
+  resultsDiv.innerHTML = '<div class="loading"><span class="spinner"></span>正在扫描...</div>';
+  const files = [];
+  function readEntry(e, path) {
+    if (e.isFile) {
+      return new Promise(resolve => {
+        e.file(file => { files.push({ name: path + file.name, size: file.size }); resolve(); });
+      });
+    }
+    if (e.isDirectory) {
+      const reader = e.createReader();
+      return new Promise(resolve => {
+        function read() {
+          reader.readEntries(entries => {
+            if (!entries.length) return resolve();
+            Promise.all(entries.map(ee => readEntry(ee, path + e.name + '/'))).then(() => read());
+          });
+        }
+        read();
+      }).then(() => {
+        files.push({ name: path + e.name + '/', size: 0, isDir: true });
+      });
+    }
+    return Promise.resolve();
+  }
+  readEntry(entry, '').then(() => {
+    const dirFiles = files.filter(f => !f.isDir);
+    dirFiles.sort((a, b) => b.size - a.size);
+    render(dirFiles);
+  });
+}
+
+function scanFiles(fileList) {
+  resultsDiv.innerHTML = '<div class="loading"><span class="spinner"></span>正在扫描...</div>';
+  const files = [];
+  for (const f of fileList) {
+    // webkitRelativePath gives the relative path
+    const path = f.webkitRelativePath || f.name;
+    files.push({ name: path, size: f.size });
+  }
+  files.sort((a, b) => b.size - a.size);
+  render(files);
+}
+
+function render(files) {
+  const totalSize = files.reduce((s, f) => s + f.size, 0);
+  const totalFiles = files.length;
+
+  // Group very small files
+  const topN = 50;
+  const top = files.slice(0, topN);
+  const restCount = files.length - topN;
+  const restSize = files.slice(topN).reduce((s, f) => s + f.size, 0);
+
+  statsDiv.style.display = 'flex';
+  statsDiv.innerHTML = `
+    <div class="stat-card"><div class="label">文件夹总大小</div><div class="value">${formatSize(totalSize)}</div></div>
+    <div class="stat-card"><div class="label">文件总数</div><div class="value">${totalFiles.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">TOP 50 占比</div><div class="value">${totalSize ? ((totalSize - restSize) / totalSize * 100).toFixed(1) : 0}<span class="unit">%</span></div></div>
+  `;
+
+  const maxSize = top[0]?.size || 1;
+  let html = '<div class="section-title">最大的文件 / 文件夹</div>';
+
+  top.forEach((f, i) => {
+    const pct = (f.size / totalSize * 100).toFixed(1);
+    const barW = (f.size / maxSize * 100).toFixed(0);
+    const color = COLORS[i % COLORS.length];
+    const shortName = f.name.length > 80 ? '...' + f.name.slice(-77) : f.name;
+    html += `
+      <div class="bar-row" title="${f.name}&#10;大小: ${formatSize(f.size)}&#10;占比: ${pct}%">
+        <span class="bar-name">${shortName}</span>
+        <span class="bar-track"><span class="bar-fill" style="width:${barW}%;background:${color}"></span></span>
+        <span class="bar-size">${formatSize(f.size)}</span>
+      </div>`;
+  });
+
+  if (restCount > 0) {
+    html += `<div class="bar-row">
+      <span class="bar-name" style="color:#484f58">其余 ${restCount.toLocaleString()} 个文件</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${(restSize/maxSize*100).toFixed(0)}%;background:#30363d"></span></span>
+      <span class="bar-size">${formatSize(restSize)}</span>
+    </div>`;
+  }
+
+  resultsDiv.innerHTML = html;
+}
+</script>
+</body>
+</html>
