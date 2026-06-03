@@ -6,60 +6,47 @@
 <title>Disk Scanner - 大文件扫描器</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #0d1117;
-  color: #c9d1d9;
-  min-height: 100vh;
-}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
 .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
 h1 { font-size: 28px; margin-bottom: 8px; color: #f0f6fc; }
 .sub { color: #8b949e; margin-bottom: 32px; font-size: 14px; }
-
-.drop-zone {
-  border: 2px dashed #30363d;
-  border-radius: 12px;
-  padding: 60px;
-  text-align: center;
-  cursor: pointer;
-  transition: all .2s;
-  background: #161b22;
-}
+.drop-zone { border: 2px dashed #30363d; border-radius: 12px; padding: 60px; text-align: center; cursor: pointer; transition: all .2s; background: #161b22; }
 .drop-zone:hover, .drop-zone.active { border-color: #58a6ff; background: #1a2332; }
 .drop-zone .icon { font-size: 48px; margin-bottom: 16px; }
 .drop-zone .title { font-size: 18px; color: #f0f6fc; margin-bottom: 8px; }
 .drop-zone .hint { font-size: 13px; color: #8b949e; }
-
 .stats { display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap; }
-.stat-card {
-  flex: 1; min-width: 140px;
-  background: #161b22; border: 1px solid #30363d;
-  border-radius: 8px; padding: 16px;
-}
+.stat-card { flex: 1; min-width: 140px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
 .stat-card .label { font-size: 12px; color: #8b949e; margin-bottom: 4px; }
 .stat-card .value { font-size: 24px; font-weight: 600; color: #f0f6fc; }
 .stat-card .unit { font-size: 14px; color: #8b949e; }
 
-.bar-wrapper { margin-bottom: 2px; }
-.bar-row {
-  display: flex; align-items: center; gap: 12px; padding: 8px 12px;
-  border-radius: 6px; cursor: pointer; transition: background .15s;
-}
+.bar-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: background .15s; }
 .bar-row:hover { background: #1c2129; }
-.bar-name {
-  flex: 1; min-width: 0; font-size: 13px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.bar-name { flex: 1; min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bar-track { flex: 2; height: 20px; background: #21262d; border-radius: 4px; overflow: hidden; }
 .bar-fill { height: 100%; border-radius: 4px; transition: width .3s; }
 .bar-size { font-size: 12px; color: #8b949e; min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
 
-.section-title { font-size: 16px; color: #f0f6fc; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #21262d; }
+.section-title { font-size: 16px; color: #f0f6fc; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #21262d; display: flex; justify-content: space-between; align-items: center; }
+
+.pie-wrapper { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 8px; }
+.pie-svg { min-width: 200px; }
+.pie-legend { flex: 1; min-width: 200px; }
+.pie-legend-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; color: #8b949e; cursor: pointer; }
+.pie-legend-item .dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; border: 1px solid #30363d; background: #21262d; color: #c9d1d9; cursor: pointer; transition: .15s; }
+.btn:hover { border-color: #58a6ff; }
+.btn.primary { background: #238636; border-color: #238636; color: #fff; }
+.btn.primary:hover { background: #2ea043; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #238636; color: #fff; padding: 10px 24px; border-radius: 8px; font-size: 14px; z-index: 999; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
 
 .loading { text-align: center; padding: 40px; color: #8b949e; }
 .spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin .6s linear infinite; margin-right: 8px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
 .empty { text-align: center; padding: 40px; color: #484f58; font-size: 14px; }
 a { color: #58a6ff; text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -68,7 +55,7 @@ a:hover { text-decoration: underline; }
 <body>
 <div class="container">
   <h1>Disk Scanner</h1>
-  <p class="sub">扫描任意文件夹，找出谁在吃你的硬盘空间</p>
+  <p class="sub">扫描任意文件夹，找出谁在吃你的硬盘空间 · 纯本地运行</p>
 
   <div class="drop-zone" id="dropZone">
     <div class="icon">📁</div>
@@ -78,33 +65,35 @@ a:hover { text-decoration: underline; }
   <input type="file" id="dirInput" webkitdirectory multiple style="display:none">
 
   <div id="stats" class="stats" style="display:none"></div>
+  <div id="actions" class="btn-row" style="display:none; margin-bottom:16px"></div>
   <div id="results"></div>
-  <div class="empty" id="footer" style="margin-top:48px">
-    开源 & 免费 · <a href="https://github.com" target="_blank">GitHub</a>
-  </div>
+  <div class="empty" style="margin-top:48px">开源 & 免费 · <a href="https://github.com/zzz123123lll/disk-scanner" target="_blank">GitHub</a></div>
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
 const dropZone = document.getElementById('dropZone');
 const dirInput = document.getElementById('dirInput');
 const statsDiv = document.getElementById('stats');
+const actionsDiv = document.getElementById('actions');
 const resultsDiv = document.getElementById('results');
-const COLORS = ['#58a6ff','#3fb950','#d29922','#f78166','#a371f7','#8b949e','#79c0ff','#56d364'];
+const toast = document.getElementById('toast');
+const COLORS = ['#58a6ff','#3fb950','#d29922','#f78166','#a371f7','#79c0ff','#56d364','#f0883e','#db61a2','#e6c34a'];
 
 dropZone.addEventListener('click', () => dirInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('active'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
 dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('active');
+  e.preventDefault(); dropZone.classList.remove('active');
   const items = e.dataTransfer.items;
-  if (items && items[0] && items[0].webkitGetAsEntry) {
-    scanEntry(items[0].webkitGetAsEntry());
-  }
+  if (items && items[0] && items[0].webkitGetAsEntry) scanEntry(items[0].webkitGetAsEntry());
 });
-dirInput.addEventListener('change', () => {
-  if (dirInput.files.length) scanFiles(dirInput.files);
-});
+dirInput.addEventListener('change', () => { if (dirInput.files.length) scanFiles(dirInput.files); });
+
+function showToast(msg) {
+  toast.textContent = msg; toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2000);
+}
 
 function formatSize(bytes) {
   if (bytes === 0) return '0 B';
@@ -133,9 +122,7 @@ function scanEntry(entry) {
           });
         }
         read();
-      }).then(() => {
-        files.push({ name: path + e.name + '/', size: 0, isDir: true });
-      });
+      }).then(() => { files.push({ name: path + e.name + '/', size: 0, isDir: true }); });
     }
     return Promise.resolve();
   }
@@ -150,9 +137,7 @@ function scanFiles(fileList) {
   resultsDiv.innerHTML = '<div class="loading"><span class="spinner"></span>正在扫描...</div>';
   const files = [];
   for (const f of fileList) {
-    // webkitRelativePath gives the relative path
-    const path = f.webkitRelativePath || f.name;
-    files.push({ name: path, size: f.size });
+    files.push({ name: f.webkitRelativePath || f.name, size: f.size });
   }
   files.sort((a, b) => b.size - a.size);
   render(files);
@@ -161,13 +146,12 @@ function scanFiles(fileList) {
 function render(files) {
   const totalSize = files.reduce((s, f) => s + f.size, 0);
   const totalFiles = files.length;
-
-  // Group very small files
   const topN = 50;
   const top = files.slice(0, topN);
   const restCount = files.length - topN;
   const restSize = files.slice(topN).reduce((s, f) => s + f.size, 0);
 
+  // Stats
   statsDiv.style.display = 'flex';
   statsDiv.innerHTML = `
     <div class="stat-card"><div class="label">文件夹总大小</div><div class="value">${formatSize(totalSize)}</div></div>
@@ -175,31 +159,88 @@ function render(files) {
     <div class="stat-card"><div class="label">TOP 50 占比</div><div class="value">${totalSize ? ((totalSize - restSize) / totalSize * 100).toFixed(1) : 0}<span class="unit">%</span></div></div>
   `;
 
-  const maxSize = top[0]?.size || 1;
-  let html = '<div class="section-title">最大的文件 / 文件夹</div>';
+  // Action buttons
+  actionsDiv.style.display = 'flex';
+  actionsDiv.innerHTML = `
+    <button class="btn primary" onclick="copyList()">复制大文件列表</button>
+    <button class="btn" onclick="exportCSV()">导出 CSV</button>
+  `;
 
+  // Store data for export
+  window._scanData = { files, totalSize, top };
+
+  // === PIE CHART - Top 10 items grouped ===
+  const pieItems = top.slice(0, 10);
+  pieItems.push({ name: '其他', size: totalSize - pieItems.reduce((s, f) => s + f.size, 0) });
+  let pieHtml = '<div class="section-title"><span>空间占比饼图</span></div>';
+  pieHtml += '<div class="pie-wrapper">';
+
+  // Draw pie as SVG using conic-gradient approach
+  const cx = 120, cy = 120, r = 100;
+  let cumulative = 0;
+  const slices = pieItems.filter(p => p.size > 0).map((p, i) => {
+    const start = cumulative;
+    const pct = p.size / totalSize;
+    const sweep = pct * 360;
+    cumulative += sweep;
+    return { ...p, start, sweep, pct, color: COLORS[i % COLORS.length] };
+  });
+
+  let svgPaths = slices.map(s => {
+    const sr = (s.start - 90) * Math.PI / 180;
+    const er = (s.start + s.sweep - 90) * Math.PI / 180;
+    const x1 = cx + r * Math.cos(sr), y1 = cy + r * Math.sin(sr);
+    const x2 = cx + r * Math.cos(er), y2 = cy + r * Math.sin(er);
+    const large = s.sweep > 180 ? 1 : 0;
+    return `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2} Z" fill="${s.color}" stroke="#0d1117" stroke-width="2"/>`;
+  }).join('');
+
+  pieHtml += `<svg class="pie-svg" width="240" height="240" viewBox="0 0 240 240">${svgPaths}<circle cx="${cx}" cy="${cy}" r="55" fill="#0d1117"/><text x="${cx}" y="${cy-4}" text-anchor="middle" fill="#f0f6fc" font-size="14" font-weight="600">${formatSize(totalSize)}</text><text x="${cx}" y="${cy+14}" text-anchor="middle" fill="#8b949e" font-size="11">总计</text></svg>`;
+
+  pieHtml += '<div class="pie-legend">';
+  slices.forEach(s => {
+    const shortName = s.name.length > 30 ? '...' + s.name.slice(-27) : s.name;
+    pieHtml += `<div class="pie-legend-item" title="${s.name}"><span class="dot" style="background:${s.color}"></span>${shortName} <span style="margin-left:auto;color:#f0f6fc">${(s.pct*100).toFixed(1)}%</span></div>`;
+  });
+  pieHtml += '</div></div>';
+
+  // Bar chart TOP 50
+  const maxSize = top[0]?.size || 1;
+  let barsHtml = '<div class="section-title"><span>最大的 50 个文件</span></div>';
   top.forEach((f, i) => {
-    const pct = (f.size / totalSize * 100).toFixed(1);
     const barW = (f.size / maxSize * 100).toFixed(0);
     const color = COLORS[i % COLORS.length];
     const shortName = f.name.length > 80 ? '...' + f.name.slice(-77) : f.name;
-    html += `
-      <div class="bar-row" title="${f.name}&#10;大小: ${formatSize(f.size)}&#10;占比: ${pct}%">
-        <span class="bar-name">${shortName}</span>
-        <span class="bar-track"><span class="bar-fill" style="width:${barW}%;background:${color}"></span></span>
-        <span class="bar-size">${formatSize(f.size)}</span>
-      </div>`;
+    barsHtml += `<div class="bar-row" title="${f.name}&#10;大小: ${formatSize(f.size)}">
+      <span class="bar-name">${shortName}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${barW}%;background:${color}"></span></span>
+      <span class="bar-size">${formatSize(f.size)}</span></div>`;
   });
-
   if (restCount > 0) {
-    html += `<div class="bar-row">
+    barsHtml += `<div class="bar-row">
       <span class="bar-name" style="color:#484f58">其余 ${restCount.toLocaleString()} 个文件</span>
       <span class="bar-track"><span class="bar-fill" style="width:${(restSize/maxSize*100).toFixed(0)}%;background:#30363d"></span></span>
-      <span class="bar-size">${formatSize(restSize)}</span>
-    </div>`;
+      <span class="bar-size">${formatSize(restSize)}</span></div>`;
   }
 
-  resultsDiv.innerHTML = html;
+  resultsDiv.innerHTML = pieHtml + barsHtml;
+}
+
+function copyList() {
+  const { top } = window._scanData;
+  const text = top.map((f, i) => `${i+1}. ${f.name}  —  ${formatSize(f.size)}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('已复制 ' + top.length + ' 条记录'));
+}
+
+function exportCSV() {
+  const { top } = window._scanData;
+  const csv = '排名,文件路径,大小(字节),大小(可读)\n' + top.map((f, i) => `${i+1},"${f.name}",${f.size},${formatSize(f.size)}`).join('\n');
+  const blob = new Blob(['﻿' + csv], {type: 'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'disk-scanner-result.csv';
+  a.click();
+  showToast('CSV 已下载');
 }
 </script>
 </body>
